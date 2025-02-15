@@ -87,6 +87,7 @@ const emails = await readMail({
 ```js
 const express = require("express");
 const session = require("express-session");
+const { simpleParser } = require("mailparser");
 const {
   generateAuthUrl,
   getToken,
@@ -147,13 +148,70 @@ app.get("/read-mail", async (req, res) => {
   if (!req.session.token) {
     return res.status(401).send("User not authenticated");
   }
+
   try {
+    let accessToken = req.session.token.access_token;
+
+    const expiresAt = req.session.token.expires_at || 0;
+    if (Date.now() >= expiresAt) {
+      try {
+        const newToken = await refreshToken({
+          clientId: "YOUR_CLIENT_ID",
+          clientSecret: "YOUR_CLIENT_SECRET",
+          refreshToken: req.session.token.refresh_token,
+        });
+        req.session.token = {
+          ...newToken,
+          expires_at: Date.now() + newToken.expires_in * 1000,
+        };
+        accessToken = newToken.access_token;
+      } catch (refreshError) {
+        return res
+          .status(401)
+          .send('Session expired. Please <a href="/auth">re-authenticate</a>.');
+      }
+    }
+
     const mails = await readMail({
-      userEmail: "YOUR_EMAIL_ADDRESS",
-      accessToken: req.session.token.access_token,
+      userEmail: "YOUR_EMAIL",
+      accessToken,
       folder: "INBOX",
     });
-    res.json(mails);
+
+    if (!mails || mails.length === 0) {
+      return res.status(404).send("No emails found.");
+    }
+
+    let html =
+      "<html><head><meta charset='utf-8'><title>Emails</title></head><body>";
+
+    await Promise.all(
+      mails.map(async (mail, index) => {
+        if (!mail.header || !mail.body) {
+          return { error: "Incomplete email data" };
+        }
+
+        try {
+          const emailContent = `${mail.header}\r\n${mail.body}`;
+          const parsed = await simpleParser(emailContent);
+
+          html += `<h2>Email #${index + 1}</h2>`;
+          html += `<h3>From:</h3> ${parsed.from?.text || "Unknown Sender"}`;
+          html += `<h3>To:</h3> ${parsed.to?.text || "Unknown Recipient"}`;
+          html += `<h3>Subject:</h3> ${parsed.subject || "No Subject"}`;
+          html += `<h3>Date:</h3> ${parsed.date || "Unknown Date"}`;
+          html += `<h3>Body:</h3>${parsed.html || parsed.text || "No Content"}`;
+          html += `<hr>`;
+
+          return parsed;
+        } catch (parseError) {
+          return { error: "Failed to parse email content" };
+        }
+      })
+    );
+
+    html += "</body></html>";
+    res.send(html);
   } catch (error) {
     res.status(500).send(error.message);
   }
