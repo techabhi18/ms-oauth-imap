@@ -1,13 +1,14 @@
 # ms-oauth-imap
 
-`ms-oauth-imap` is a Node.js package that integrates Microsoft OAuth authentication with IMAP email access. It provides functions to generate an OAuth URL, retrieve access tokens, refresh tokens, and read emails from specified folders.
+`ms-oauth-imap` is a Node.js package that integrates Microsoft OAuth authentication with IMAP email access. It provides functions to generate an OAuth URL, retrieve access tokens, refresh tokens, list available mailbox folders, and read emails from specified folders.
 
 ## Features
 
 - Generate an OAuth authentication URL
 - Retrieve an access token using an authorization code
 - Refresh expired tokens
-- Read emails from specified mailboxes (INBOX, Sent, Drafts, etc.)
+- List available mailbox folders (Inbox, Sent, Drafts, etc.)
+- Read emails from specified mailboxes
 
 ## Installation
 
@@ -33,6 +34,7 @@ const {
   getToken,
   refreshToken,
   readMail,
+  listFolders,
 } = require("ms-oauth-imap");
 ```
 
@@ -72,13 +74,37 @@ const refreshedToken = await refreshToken({
 });
 ```
 
-### 5. Read Emails from a Folder
+### 5. List Available Mailbox Folders
+
+```js
+const folders = await listFolders({
+  userEmail: "YOUR_EMAIL_ADDRESS",
+  accessToken: token.access_token,
+});
+
+console.log(folders);
+```
+
+This will return a list of available folders such as:
+
+```json
+{
+  "INBOX": {},
+  "Sent Items": {},
+  "Drafts": {},
+  "Deleted Items": {},
+  "Junk Email": {},
+  "Outbox": {}
+}
+```
+
+### 6. Read Emails from a Folder
 
 ```js
 const emails = await readMail({
   userEmail: "YOUR_EMAIL_ADDRESS",
   accessToken: token.access_token,
-  folder: "INBOX", // Can be 'INBOX', 'Sent', 'Drafts', etc.
+  folder: "INBOX", // Can be 'INBOX', 'Sent Items', 'Drafts', etc.
 });
 ```
 
@@ -93,6 +119,7 @@ const {
   getToken,
   refreshToken,
   readMail,
+  listFolders,
 } = require("ms-oauth-imap");
 const app = express();
 
@@ -139,6 +166,22 @@ app.get("/refresh-token", async (req, res) => {
     });
     req.session.token = newToken;
     res.send("Token refreshed successfully");
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+app.get("/list-folders", async (req, res) => {
+  if (!req.session.token) {
+    return res.status(401).send("User not authenticated");
+  }
+
+  try {
+    const folders = await listFolders({
+      userEmail: "YOUR_EMAIL_ADDRESS",
+      accessToken: req.session.token.access_token,
+    });
+    res.json(folders);
   } catch (error) {
     res.status(500).send(error.message);
   }

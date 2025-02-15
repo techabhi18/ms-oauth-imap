@@ -152,9 +152,52 @@ function readMail({ userEmail, accessToken, folder = "INBOX" }) {
   });
 }
 
+function listFolders({ userEmail, accessToken }) {
+  return new Promise((resolve, reject) => {
+    if (!userEmail || !accessToken) {
+      return reject(new Error("userEmail and accessToken are required"));
+    }
+
+    const xoauth2Str = Buffer.from(
+      `user=${userEmail}\x01auth=Bearer ${accessToken}\x01\x01`
+    ).toString("base64");
+
+    const imap = new Imap({
+      user: userEmail,
+      xoauth2: xoauth2Str,
+      host: "outlook.office365.com",
+      port: 993,
+      tls: true,
+      tlsOptions: { rejectUnauthorized: false },
+    });
+
+    imap.once("ready", () => {
+      imap.getBoxes((err, boxes) => {
+        if (err) {
+          reject(new Error("Error retrieving folders: " + err.message));
+        } else {
+          resolve(boxes);
+        }
+        imap.end();
+      });
+    });
+
+    imap.once("error", (err) => {
+      reject(new Error("IMAP error: " + err.message));
+    });
+
+    try {
+      imap.connect();
+    } catch (error) {
+      reject(new Error("Connection error: " + error.message));
+    }
+  });
+}
+
 module.exports = {
   generateAuthUrl,
   getToken,
   refreshToken,
   readMail,
+  listFolders,
 };
