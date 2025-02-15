@@ -81,21 +81,6 @@ const folders = await listFolders({
   userEmail: "YOUR_EMAIL_ADDRESS",
   accessToken: token.access_token,
 });
-
-console.log(folders);
-```
-
-This will return a list of available folders such as:
-
-```json
-{
-  "INBOX": {},
-  "Sent Items": {},
-  "Drafts": {},
-  "Deleted Items": {},
-  "Junk Email": {},
-  "Outbox": {}
-}
 ```
 
 ### 6. Read Emails from a Folder
@@ -114,6 +99,7 @@ const emails = await readMail({
 const express = require("express");
 const session = require("express-session");
 const { simpleParser } = require("mailparser");
+const util = require("util");
 const {
   generateAuthUrl,
   getToken,
@@ -181,7 +167,7 @@ app.get("/list-folders", async (req, res) => {
       userEmail: "YOUR_EMAIL_ADDRESS",
       accessToken: req.session.token.access_token,
     });
-    res.json(folders);
+    res.send(`<pre>${util.inspect(folders, { depth: null })}</pre>`);
   } catch (error) {
     res.status(500).send(error.message);
   }
