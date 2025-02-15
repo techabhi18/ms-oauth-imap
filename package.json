@@ -1,0 +1,44 @@
+{
+  "name": "ms-oauth-imap",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "oauth",
+    "microsoft",
+    "outlook",
+    "office365",
+    "imap",
+    "email",
+    "authentication",
+    "oauth2",
+    "token",
+    "refresh-token",
+    "email-fetching",
+    "node-imap",
+    "microsoft-graph",
+    "express",
+    "mail"
+  ],
+  "author": "Abhishek",
+  "license": "ISC",
+  "dependencies": {
+    "node-imap": "^0.9.6",
+    "quoted-printable": "^1.0.1",
+    "simple-oauth2": "^5.1.0"
+  },
+  "devDependencies": {},
+  "description": "ms-oauth-imap is a Node.js package that enables OAuth authentication with Microsoft accounts and allows reading emails via IMAP. It provides functions to generate OAuth authorization URLs, retrieve access tokens, refresh expired tokens, and fetch emails from specified folders in Outlook/Office 365 mailboxes.",
+  "bugs": {
+    "url": "https://github.com/techabhi18/ms-oauth-imap/issues"
+  },
+  "homepage": "https://github.com/techabhi18/ms-oauth-imap#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techabhi18/ms-oauth-imap.git"
+  }
+}
